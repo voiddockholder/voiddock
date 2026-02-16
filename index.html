@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>VoidDock</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .header {
+      border-bottom: 1px solid #fff;
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+    }
+
+    .header .title {
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .header .version {
+      font-size: 14px;
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+
+    .separator {
+      color: #fff;
+      margin-bottom: 16px;
+      white-space: pre;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 12px;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace;
+      padding: 4px 0;
+      width: 100%;
+      text-align: left;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .section-toggle:hover,
+    .section-toggle:focus {
+      opacity: 1;
+      outline: none;
+    }
+
+    .section-toggle .arrow {
+      display: inline-block;
+      transition: transform 0.15s ease;
+      font-size: 10px;
+    }
+
+    .section-toggle.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .section-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s ease;
+      max-height: 1000px;
+      opacity: 1;
+    }
+
+    .section-items.collapsed {
+      max-height: 0;
+      opacity: 0;
+      margin: 0;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      background: #000;
+      color: #fff;
+      border: 1px solid #fff;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 16px;
+      padding: 12px 16px;
+      text-align: left;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 0;
+    }
+
+    .btn:hover,
+    .btn:focus {
+      background: #fff;
+      color: #000;
+      outline: none;
+    }
+
+    .btn:active {
+      background: #ccc;
+      color: #000;
+    }
+
+    .btn .prefix {
+      opacity: 0.5;
+      margin-right: 8px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+    }
+
+    .output-area {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid #fff;
+      min-height: 80px;
+      max-height: 50vh;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .output-area .line {
+      margin-bottom: 2px;
+    }
+
+    .output-area .prompt {
+      opacity: 0.5;
+    }
+
+    .gamepad-viz {
+      margin-top: 8px;
+      padding: 8px;
+      border: 1px solid #444;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .stick-canvas {
+      display: inline-block;
+      border: 1px solid #666;
+      margin: 4px;
+      background: #111;
+    }
+
+    .fps-counter {
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      font-size: 12px;
+      color: #0f0;
+      font-family: "Courier New", monospace;
+      z-index: 999;
+      background: #000;
+      padding: 2px 6px;
+      border: 1px solid #0f0;
+      display: none;
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding-top: 8px;
+      border-top: 1px solid #fff;
+      font-size: 12px;
+      opacity: 0.5;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="fps-counter" id="fpsCounter">FPS: --</div>
+
+  <div class="header">
+    <div class="title">VOIDDOCK</div>
+    <div class="version">v2.0.0</div>
+  </div>
+
+  <div class="separator">=======================================</div>
+
+  <div class="content">
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- SYSTEM --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('status')">
+        <span class="prefix">></span> System Status
+      </button>
+      <button class="btn" onclick="runCommand('info')">
+        <span class="prefix">></span> Device Info
+      </button>
+      <button class="btn" onclick="runCommand('battery')">
+        <span class="prefix">></span> Battery Status
+      </button>
+      <button class="btn" onclick="runCommand('screen')">
+        <span class="prefix">></span> Screen / Display
+      </button>
+      <button class="btn" onclick="runCommand('touch')">
+        <span class="prefix">></span> Touch Detection
+      </button>
+      <button class="btn" onclick="runCommand('orientation')">
+        <span class="prefix">></span> Orientation / Gyro
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- GRAPHICS --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('webgl')">
+        <span class="prefix">></span> WebGL Info
+      </button>
+      <button class="btn" onclick="runCommand('webgpu')">
+        <span class="prefix">></span> WebGPU Check
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- STORAGE --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('localstorage')">
+        <span class="prefix">></span> Local Storage Test
+      </button>
+      <button class="btn" onclick="runCommand('indexeddb')">
+        <span class="prefix">></span> IndexedDB Test
+      </button>
+      <button class="btn" onclick="runCommand('cookie')">
+        <span class="prefix">></span> Cookie Test
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- NETWORK --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('network')">
+        <span class="prefix">></span> Network Check
+      </button>
+      <button class="btn" onclick="runCommand('ping')">
+        <span class="prefix">></span> Ping Test
+      </button>
+      <button class="btn" onclick="runCommand('https')">
+        <span class="prefix">></span> HTTPS Check
+      </button>
+      <button class="btn" onclick="runCommand('webrtc')">
+        <span class="prefix">></span> WebRTC IP Detection
+      </button>
+      <button class="btn" onclick="runCommand('localip')">
+        <span class="prefix">></span> Local IP Display
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- CAPABILITIES --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('serviceworker')">
+        <span class="prefix">></span> Service Worker
+      </button>
+      <button class="btn" onclick="runCommand('fullscreen')">
+        <span class="prefix">></span> Fullscreen Toggle
+      </button>
+      <button class="btn" onclick="runCommand('fps')">
+        <span class="prefix">></span> FPS Counter Toggle
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- GAMEPAD --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('gamepad')">
+        <span class="prefix">></span> Gamepad Detection
+      </button>
+      <button class="btn" onclick="runCommand('gamepadlive')">
+        <span class="prefix">></span> Joy-Con Live Viewer
+      </button>
+    </div>
+
+    <button class="section-toggle" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> -- MISC --
+    </button>
+    <div class="section-items">
+      <button class="btn" onclick="runCommand('about')">
+        <span class="prefix">></span> About VoidDock
+      </button>
+      <button class="btn" onclick="runCommand('clear')">
+        <span class="prefix">></span> Clear Output
+      </button>
+    </div>
+
+    <div class="output-area" id="output">
+      <div class="line"><span class="prompt">C:\VOIDDOCK></span> Ready.</div>
+    </div>
+  </div>
+
+  <div class="footer">VOIDDOCK &copy; 2025 | SwitchBru DNS Compatible</div>
+
+  <script>
+    var outputEl = document.getElementById("output");
+    var fpsEl = document.getElementById("fpsCounter");
+    var startTime = Date.now();
+    var fpsActive = false;
+    var gamepadLiveInterval = null;
+    var fpsFrames = 0;
+    var fpsLastTime = performance.now();
+
+    function toggleSection(btn) {
+      var items = btn.nextElementSibling;
+      btn.classList.toggle("collapsed");
+      items.classList.toggle("collapsed");
+    }
+
+    function addLine(text) {
+      var line = document.createElement("div");
+      line.className = "line";
+      line.textContent = text;
+      outputEl.appendChild(line);
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    function addHTML(html) {
+      var line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = html;
+      outputEl.appendChild(line);
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    function addPromptLine(text) {
+      var line = document.createElement("div");
+      line.className = "line";
+      var prompt = document.createElement("span");
+      prompt.className = "prompt";
+      prompt.textContent = "C:\\VOIDDOCK> ";
+      line.appendChild(prompt);
+      line.appendChild(document.createTextNode(text));
+      outputEl.appendChild(line);
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    function formatUptime() {
+      var ms = Date.now() - startTime;
+      var s = Math.floor(ms / 1000);
+      var m = Math.floor(s / 60);
+      var h = Math.floor(m / 60);
+      s = s % 60;
+      m = m % 60;
+      return h + "h " + m + "m " + s + "s";
+    }
+
+    // ============================
+    // COMMAND DISPATCHER
+    // ============================
+    function runCommand(cmd) {
+      if (cmd === "clear") {
+        outputEl.innerHTML = "";
+        addPromptLine("Output cleared.");
+        return;
+      }
+
+      addLine("");
+      addPromptLine(cmd);
+
+      switch (cmd) {
+        case "status":    cmdStatus(); break;
+        case "info":      cmdInfo(); break;
+        case "battery":   cmdBattery(); break;
+        case "screen":    cmdScreen(); break;
+        case "touch":     cmdTouch(); break;
+        case "orientation": cmdOrientation(); break;
+        case "webgl":     cmdWebGL(); break;
+        case "webgpu":    cmdWebGPU(); break;
+        case "localstorage": cmdLocalStorage(); break;
+        case "indexeddb": cmdIndexedDB(); break;
+        case "cookie":    cmdCookie(); break;
+        case "network":   cmdNetwork(); break;
+        case "ping":      cmdPing(); break;
+        case "https":     cmdHTTPS(); break;
+        case "webrtc":    cmdWebRTC(); break;
+        case "localip":   cmdLocalIP(); break;
+        case "serviceworker": cmdServiceWorker(); break;
+        case "fullscreen": cmdFullscreen(); break;
+        case "fps":       cmdFPS(); break;
+        case "gamepad":   cmdGamepad(); break;
+        case "gamepadlive": cmdGamepadLive(); break;
+        case "about":     cmdAbout(); break;
+        default:          addLine("  Unknown command: " + cmd);
+      }
+    }
+
+    // ============================
+    // STATUS
+    // ============================
+    function cmdStatus() {
+      addLine("  STATUS: ONLINE");
+      addLine("  UPTIME: " + formatUptime());
+      addLine("  JS ENGINE: OK");
+      addLine("  DOM: READY");
+    }
+
+    // ============================
+    // DEVICE INFO
+    // ============================
+    function cmdInfo() {
+      addLine("  USER AGENT: " + navigator.userAgent);
+      addLine("  PLATFORM: " + (navigator.platform || "Unknown"));
+      addLine("  LANGUAGE: " + (navigator.language || "Unknown"));
+      addLine("  SCREEN: " + screen.width + "x" + screen.height);
+      addLine("  VIEWPORT: " + window.innerWidth + "x" + window.innerHeight);
+      addLine("  TOUCH: " + ("ontouchstart" in window ? "YES" : "NO"));
+    }
+
+    // ============================
+    // BATTERY STATUS
+    // ============================
+    function cmdBattery() {
+      if (!navigator.getBattery) {
+        addLine("  Battery API: NOT SUPPORTED");
+        return;
+      }
+      addLine("  Querying battery...");
+      navigator.getBattery().then(function(batt) {
+        addLine("  LEVEL: " + Math.round(batt.level * 100) + "%");
+        addLine("  CHARGING: " + (batt.charging ? "YES" : "NO"));
+        addLine("  CHARGE TIME: " + (batt.chargingTime === Infinity ? "N/A" : batt.chargingTime + "s"));
+        addLine("  DISCHARGE TIME: " + (batt.dischargingTime === Infinity ? "N/A" : batt.dischargingTime + "s"));
+      }).catch(function(e) {
+        addLine("  Battery API error: " + e.message);
+      });
+    }
+
+    // ============================
+    // SCREEN / DISPLAY
+    // ============================
+    function cmdScreen() {
+      addLine("  RESOLUTION: " + screen.width + "x" + screen.height);
+      addLine("  AVAILABLE: " + screen.availWidth + "x" + screen.availHeight);
+      addLine("  COLOR DEPTH: " + screen.colorDepth + " bit");
+      addLine("  PIXEL DEPTH: " + screen.pixelDepth + " bit");
+      addLine("  PIXEL RATIO: " + (window.devicePixelRatio || 1));
+      addLine("  VIEWPORT: " + window.innerWidth + "x" + window.innerHeight);
+      addLine("  OUTER WINDOW: " + window.outerWidth + "x" + window.outerHeight);
+      var orient = screen.orientation ? screen.orientation.type : (window.orientation !== undefined ? window.orientation + "deg" : "Unknown");
+      addLine("  ORIENTATION: " + orient);
+    }
+
+    // ============================
+    // TOUCH DETECTION
+    // ============================
+    function cmdTouch() {
+      addLine("  ontouchstart: " + ("ontouchstart" in window ? "YES" : "NO"));
+      addLine("  Touch Events: " + ("TouchEvent" in window ? "YES" : "NO"));
+      addLine("  maxTouchPoints: " + (navigator.maxTouchPoints || 0));
+      addLine("  Pointer Events: " + ("PointerEvent" in window ? "YES" : "NO"));
+      var coarse = false;
+      try {
+        coarse = window.matchMedia("(pointer: coarse)").matches;
+      } catch(e) {}
+      addLine("  Coarse Pointer: " + (coarse ? "YES" : "NO"));
+      var hover = false;
+      try {
+        hover = window.matchMedia("(hover: hover)").matches;
+      } catch(e) {}
+      addLine("  Hover Support: " + (hover ? "YES" : "NO"));
+    }
+
+    // ============================
+    // ORIENTATION / GYRO
+    // ============================
+    function cmdOrientation() {
+      addLine("  DeviceOrientationEvent: " + ("DeviceOrientationEvent" in window ? "YES" : "NO"));
+      addLine("  DeviceMotionEvent: " + ("DeviceMotionEvent" in window ? "YES" : "NO"));
+      if (screen.orientation) {
+        addLine("  Screen Orientation: " + screen.orientation.type);
+        addLine("  Angle: " + screen.orientation.angle + "deg");
+      } else {
+        addLine("  Screen Orientation API: NOT SUPPORTED");
+        if (window.orientation !== undefined) {
+          addLine("  window.orientation: " + window.orientation + "deg");
+        }
+      }
+
+      if ("DeviceOrientationEvent" in window) {
+        addLine("  Listening for orientation data (5s)...");
+        var gotData = false;
+        var handler = function(e) {
+          if (!gotData) {
+            gotData = true;
+            addLine("  Alpha (Z): " + (e.alpha !== null ? e.alpha.toFixed(2) + "deg" : "N/A"));
+            addLine("  Beta  (X): " + (e.beta !== null ? e.beta.toFixed(2) + "deg" : "N/A"));
+            addLine("  Gamma (Y): " + (e.gamma !== null ? e.gamma.toFixed(2) + "deg" : "N/A"));
+          }
+        };
+        window.addEventListener("deviceorientation", handler);
+        setTimeout(function() {
+          window.removeEventListener("deviceorientation", handler);
+          if (!gotData) {
+            addLine("  No orientation data received.");
+          }
+        }, 5000);
+      }
+
+      if ("DeviceMotionEvent" in window) {
+        addLine("  Listening for motion data (5s)...");
+        var gotMotion = false;
+        var motionHandler = function(e) {
+          if (!gotMotion && e.accelerationIncludingGravity) {
+            gotMotion = true;
+            var a = e.accelerationIncludingGravity;
+            addLine("  Accel X: " + (a.x !== null ? a.x.toFixed(2) : "N/A"));
+            addLine("  Accel Y: " + (a.y !== null ? a.y.toFixed(2) : "N/A"));
+            addLine("  Accel Z: " + (a.z !== null ? a.z.toFixed(2) : "N/A"));
+          }
+        };
+        window.addEventListener("devicemotion", motionHandler);
+        setTimeout(function() {
+          window.removeEventListener("devicemotion", motionHandler);
+          if (!gotMotion) {
+            addLine("  No motion data received.");
+          }
+        }, 5000);
+      }
+    }
+
+    // ============================
+    // WEBGL INFO
+    // ============================
+    function cmdWebGL() {
+      var canvas = document.createElement("canvas");
+      var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      if (!gl) {
+        addLine("  WebGL: NOT SUPPORTED");
+        return;
+      }
+      addLine("  WebGL: SUPPORTED");
+      addLine("  VERSION: " + gl.getParameter(gl.VERSION));
+      addLine("  GLSL VERSION: " + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+      addLine("  VENDOR: " + gl.getParameter(gl.VENDOR));
+      addLine("  RENDERER: " + gl.getParameter(gl.RENDERER));
+      var dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      if (dbg) {
+        addLine("  UNMASKED VENDOR: " + gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL));
+        addLine("  UNMASKED RENDERER: " + gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL));
+      }
+      addLine("  MAX TEXTURE SIZE: " + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+      addLine("  MAX VIEWPORT: " + gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+      addLine("  EXTENSIONS: " + (gl.getSupportedExtensions() || []).length);
+
+      var gl2 = canvas.getContext("webgl2");
+      addLine("  WebGL2: " + (gl2 ? "SUPPORTED" : "NOT SUPPORTED"));
+    }
+
+    // ============================
+    // WEBGPU CHECK
+    // ============================
+    function cmdWebGPU() {
+      if (!navigator.gpu) {
+        addLine("  WebGPU: NOT SUPPORTED");
+        return;
+      }
+      addLine("  WebGPU API: DETECTED");
+      addLine("  Requesting adapter...");
+      navigator.gpu.requestAdapter().then(function(adapter) {
+        if (!adapter) {
+          addLine("  Adapter: NONE AVAILABLE");
+          return;
+        }
+        addLine("  Adapter: FOUND");
+        if (adapter.name) addLine("  NAME: " + adapter.name);
+        if (adapter.features) {
+          addLine("  FEATURES: " + adapter.features.size);
+        }
+        if (adapter.limits) {
+          addLine("  MAX TEXTURE 2D: " + (adapter.limits.maxTextureDimension2D || "?"));
+          addLine("  MAX BUFFERS: " + (adapter.limits.maxBindGroups || "?"));
+        }
+      }).catch(function(e) {
+        addLine("  WebGPU adapter error: " + e.message);
+      });
+    }
+
+    // ============================
+    // LOCAL STORAGE TEST
+    // ============================
+    function cmdLocalStorage() {
+      try {
+        var testKey = "__voiddock_test__";
+        localStorage.setItem(testKey, "1");
+        var val = localStorage.getItem(testKey);
+        localStorage.removeItem(testKey);
+        addLine("  LocalStorage: WORKING");
+        addLine("  Read/Write: " + (val === "1" ? "OK" : "FAIL"));
+      } catch (e) {
+        addLine("  LocalStorage: BLOCKED or UNAVAILABLE");
+        addLine("  Error: " + e.message);
+        return;
+      }
+
+      try {
+        var total = 0;
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          total += key.length + localStorage.getItem(key).length;
+        }
+        addLine("  Current items: " + localStorage.length);
+        addLine("  Approx used: " + (total * 2 / 1024).toFixed(1) + " KB");
+      } catch (e) {
+        addLine("  Could not enumerate storage");
+      }
+
+      try {
+        var sessionKey = "__voiddock_sess_test__";
+        sessionStorage.setItem(sessionKey, "1");
+        var sv = sessionStorage.getItem(sessionKey);
+        sessionStorage.removeItem(sessionKey);
+        addLine("  SessionStorage: " + (sv === "1" ? "WORKING" : "FAIL"));
+      } catch (e) {
+        addLine("  SessionStorage: BLOCKED");
+      }
+    }
+
+    // ============================
+    // INDEXEDDB TEST
+    // ============================
+    function cmdIndexedDB() {
+      if (!window.indexedDB) {
+        addLine("  IndexedDB: NOT SUPPORTED");
+        return;
+      }
+      addLine("  IndexedDB API: DETECTED");
+      addLine("  Opening test database...");
+      try {
+        var req = indexedDB.open("__voiddock_test_db__", 1);
+        req.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains("test")) {
+            db.createObjectStore("test", { keyPath: "id" });
+          }
+        };
+        req.onsuccess = function(e) {
+          var db = e.target.result;
+          addLine("  IndexedDB: WORKING");
+          addLine("  DB Name: " + db.name);
+          addLine("  DB Version: " + db.version);
+          addLine("  Object Stores: " + db.objectStoreNames.length);
+
+          try {
+            var tx = db.transaction("test", "readwrite");
+            var store = tx.objectStore("test");
+            store.put({ id: 1, ts: Date.now() });
+            tx.oncomplete = function() {
+              addLine("  Write Test: OK");
+              db.close();
+              indexedDB.deleteDatabase("__voiddock_test_db__");
+            };
+            tx.onerror = function() {
+              addLine("  Write Test: FAILED");
+              db.close();
+            };
+          } catch (ex) {
+            addLine("  Transaction error: " + ex.message);
+            db.close();
+          }
+        };
+        req.onerror = function() {
+          addLine("  IndexedDB: OPEN FAILED");
+        };
+      } catch (e) {
+        addLine("  IndexedDB error: " + e.message);
+      }
+    }
+
+    // ============================
+    // COOKIE TEST
+    // ============================
+    function cmdCookie() {
+      addLine("  navigator.cookieEnabled: " + (navigator.cookieEnabled ? "YES" : "NO"));
+      try {
+        document.cookie = "__voiddock_test=1; SameSite=Lax; path=/";
+        var hasCookie = document.cookie.indexOf("__voiddock_test=1") !== -1;
+        addLine("  Write Cookie: " + (hasCookie ? "OK" : "BLOCKED"));
+        if (hasCookie) {
+          document.cookie = "__voiddock_test=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+          addLine("  Delete Cookie: OK");
+        }
+      } catch (e) {
+        addLine("  Cookie Test: ERROR - " + e.message);
+      }
+      addLine("  Current Cookies: " + (document.cookie.length > 0 ? document.cookie.length + " chars" : "EMPTY"));
+    }
+
+    // ============================
+    // NETWORK
+    // ============================
+    function cmdNetwork() {
+      addLine("  ONLINE: " + (navigator.onLine ? "YES" : "NO"));
+      addLine("  PROTOCOL: " + window.location.protocol);
+      addLine("  HOST: " + window.location.host);
+      if (navigator.connection) {
+        addLine("  TYPE: " + (navigator.connection.effectiveType || "Unknown"));
+        addLine("  DOWNLINK: " + (navigator.connection.downlink || "?") + " Mbps");
+        addLine("  RTT: " + (navigator.connection.rtt || "?") + " ms");
+        addLine("  SAVE-DATA: " + (navigator.connection.saveData ? "YES" : "NO"));
+      } else {
+        addLine("  Connection API: NOT SUPPORTED");
+      }
+    }
+
+    // ============================
+    // PING TEST (FETCH TIMING)
+    // ============================
+    function cmdPing() {
+      addLine("  Running ping test (3 requests)...");
+      var url = window.location.origin + "/?_t=" + Date.now();
+      var results = [];
+      var done = 0;
+
+      function doPing(i) {
+        var t0 = performance.now();
+        fetch(url, { method: "HEAD", cache: "no-store" }).then(function() {
+          var elapsed = performance.now() - t0;
+          results[i] = elapsed;
+          addLine("  Ping #" + (i + 1) + ": " + elapsed.toFixed(1) + " ms");
+          done++;
+          if (done === 3) showPingSummary();
+        }).catch(function(e) {
+          results[i] = -1;
+          addLine("  Ping #" + (i + 1) + ": FAILED (" + e.message + ")");
+          done++;
+          if (done === 3) showPingSummary();
+        });
+      }
+
+      function showPingSummary() {
+        var valid = results.filter(function(r) { return r >= 0; });
+        if (valid.length === 0) {
+          addLine("  ALL PINGS FAILED");
+          return;
+        }
+        var avg = valid.reduce(function(a, b) { return a + b; }, 0) / valid.length;
+        var min = Math.min.apply(null, valid);
+        var max = Math.max.apply(null, valid);
+        addLine("  AVG: " + avg.toFixed(1) + " ms | MIN: " + min.toFixed(1) + " ms | MAX: " + max.toFixed(1) + " ms");
+      }
+
+      doPing(0);
+      setTimeout(function() { doPing(1); }, 300);
+      setTimeout(function() { doPing(2); }, 600);
+    }
+
+    // ============================
+    // HTTPS CHECK
+    // ============================
+    function cmdHTTPS() {
+      var isHTTPS = window.location.protocol === "https:";
+      addLine("  Protocol: " + window.location.protocol);
+      addLine("  HTTPS: " + (isHTTPS ? "YES - ENFORCED" : "NO - INSECURE"));
+      addLine("  Secure Context: " + (window.isSecureContext ? "YES" : "NO"));
+      if (!isHTTPS) {
+        addLine("  WARNING: Connection is not encrypted.");
+      }
+    }
+
+    // ============================
+    // WEBRTC IP DETECTION
+    // ============================
+    function cmdWebRTC() {
+      if (!window.RTCPeerConnection) {
+        addLine("  WebRTC: NOT SUPPORTED");
+        return;
+      }
+      addLine("  WebRTC: SUPPORTED");
+      addLine("  Probing for IPs...");
+      try {
+        var pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel("");
+        var found = {};
+        pc.onicecandidate = function(e) {
+          if (!e.candidate) {
+            pc.close();
+            if (Object.keys(found).length === 0) {
+              addLine("  No IP addresses discovered.");
+            }
+            return;
+          }
+          var parts = e.candidate.candidate.split(" ");
+          var ip = parts[4];
+          if (ip && !found[ip]) {
+            found[ip] = true;
+            var type = parts[7] || "";
+            addLine("  IP: " + ip + (type ? " (" + type + ")" : ""));
+          }
+        };
+        pc.createOffer().then(function(offer) {
+          return pc.setLocalDescription(offer);
+        }).catch(function(e) {
+          addLine("  WebRTC error: " + e.message);
+        });
+        setTimeout(function() {
+          try { pc.close(); } catch(e) {}
+        }, 5000);
+      } catch (e) {
+        addLine("  WebRTC probe error: " + e.message);
+      }
+    }
+
+    // ============================
+    // LOCAL IP DISPLAY
+    // ============================
+    function cmdLocalIP() {
+      if (!window.RTCPeerConnection) {
+        addLine("  WebRTC not available for IP detection.");
+        return;
+      }
+      addLine("  Detecting local IPs via WebRTC...");
+      try {
+        var pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pc.createDataChannel("");
+        var found = {};
+        pc.onicecandidate = function(e) {
+          if (!e.candidate) {
+            pc.close();
+            if (Object.keys(found).length === 0) {
+              addLine("  No local IPs found (may be blocked).");
+            }
+            return;
+          }
+          var parts = e.candidate.candidate.split(" ");
+          var ip = parts[4];
+          if (ip && !found[ip]) {
+            found[ip] = true;
+            if (ip.match(/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|fd|fe80)/)) {
+              addLine("  LOCAL IP: " + ip);
+            } else {
+              addLine("  PUBLIC IP: " + ip);
+            }
+          }
+        };
+        pc.createOffer().then(function(offer) {
+          return pc.setLocalDescription(offer);
+        }).catch(function(e) {
+          addLine("  Error: " + e.message);
+        });
+        setTimeout(function() {
+          try { pc.close(); } catch(e) {}
+        }, 8000);
+      } catch (e) {
+        addLine("  IP detection error: " + e.message);
+      }
+    }
+
+    // ============================
+    // SERVICE WORKER
+    // ============================
+    function cmdServiceWorker() {
+      addLine("  Service Worker API: " + ("serviceWorker" in navigator ? "YES" : "NO"));
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          addLine("  Registered Workers: " + regs.length);
+          regs.forEach(function(reg, i) {
+            addLine("  [" + i + "] Scope: " + reg.scope);
+            addLine("  [" + i + "] State: " + (reg.active ? "active" : reg.installing ? "installing" : reg.waiting ? "waiting" : "unknown"));
+          });
+        }).catch(function(e) {
+          addLine("  Could not query registrations: " + e.message);
+        });
+      }
+      addLine("  Cache API: " + ("caches" in window ? "YES" : "NO"));
+      addLine("  Push API: " + ("PushManager" in window ? "YES" : "NO"));
+      addLine("  Notifications: " + ("Notification" in window ? "YES" : "NO"));
+    }
+
+    // ============================
+    // FULLSCREEN TOGGLE
+    // ============================
+    function cmdFullscreen() {
+      var fsAPI = document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled || document.msFullscreenEnabled;
+      addLine("  Fullscreen API: " + (fsAPI ? "SUPPORTED" : "NOT SUPPORTED"));
+
+      if (!fsAPI) return;
+
+      var isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+      if (isFS) {
+        addLine("  Currently: FULLSCREEN - Exiting...");
+        (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen).call(document);
+        addLine("  Exited fullscreen.");
+      } else {
+        addLine("  Currently: WINDOWED - Entering fullscreen...");
+        var el = document.documentElement;
+        var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (fn) {
+          fn.call(el).then(function() {
+            addLine("  Entered fullscreen.");
+          }).catch(function(e) {
+            addLine("  Fullscreen denied: " + e.message);
+          });
+        }
+      }
+    }
+
+    // ============================
+    // FPS COUNTER TOGGLE
+    // ============================
+    function cmdFPS() {
+      fpsActive = !fpsActive;
+      fpsEl.style.display = fpsActive ? "block" : "none";
+      addLine("  FPS Counter: " + (fpsActive ? "ON" : "OFF"));
+      if (fpsActive) {
+        fpsFrames = 0;
+        fpsLastTime = performance.now();
+        requestAnimationFrame(fpsLoop);
+      }
+    }
+
+    function fpsLoop() {
+      if (!fpsActive) return;
+      fpsFrames++;
+      var now = performance.now();
+      if (now - fpsLastTime >= 1000) {
+        var fps = Math.round(fpsFrames * 1000 / (now - fpsLastTime));
+        fpsEl.textContent = "FPS: " + fps;
+        fpsFrames = 0;
+        fpsLastTime = now;
+      }
+      requestAnimationFrame(fpsLoop);
+    }
+
+    // ============================
+    // GAMEPAD DETECTION
+    // ============================
+    function cmdGamepad() {
+      addLine("  Gamepad API: " + ("getGamepads" in navigator ? "YES" : "NO"));
+      if (!("getGamepads" in navigator)) return;
+
+      var gamepads = navigator.getGamepads();
+      var count = 0;
+      for (var i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          count++;
+          var gp = gamepads[i];
+          addLine("  [" + gp.index + "] " + gp.id);
+          addLine("    Buttons: " + gp.buttons.length);
+          addLine("    Axes: " + gp.axes.length);
+          addLine("    Connected: " + gp.connected);
+          addLine("    Mapping: " + (gp.mapping || "nonstandard"));
+          addLine("    Timestamp: " + gp.timestamp.toFixed(0));
+        }
+      }
+      if (count === 0) {
+        addLine("  No gamepads connected.");
+        addLine("  TIP: Press a button on the controller first.");
+      }
+    }
+
+    // ============================
+    // JOY-CON / GAMEPAD LIVE VIEWER
+    // ============================
+    function cmdGamepadLive() {
+      if (!("getGamepads" in navigator)) {
+        addLine("  Gamepad API: NOT SUPPORTED");
+        return;
+      }
+
+      if (gamepadLiveInterval) {
+        clearInterval(gamepadLiveInterval);
+        gamepadLiveInterval = null;
+        addLine("  Live viewer: STOPPED");
+        return;
+      }
+
+      addLine("  Live viewer: STARTING (press again to stop)");
+      addLine("  Waiting for gamepad input...");
+
+      // Create a live display area
+      var vizDiv = document.createElement("div");
+      vizDiv.className = "gamepad-viz";
+      vizDiv.id = "gamepadViz";
+      outputEl.appendChild(vizDiv);
+
+      // Create two canvases for analog sticks
+      var leftCanvas = document.createElement("canvas");
+      leftCanvas.className = "stick-canvas";
+      leftCanvas.width = 100;
+      leftCanvas.height = 100;
+      var rightCanvas = document.createElement("canvas");
+      rightCanvas.className = "stick-canvas";
+      rightCanvas.width = 100;
+      rightCanvas.height = 100;
+
+      var stickRow = document.createElement("div");
+      stickRow.appendChild(document.createTextNode("L-Stick: "));
+      stickRow.appendChild(leftCanvas);
+      stickRow.appendChild(document.createTextNode(" R-Stick: "));
+      stickRow.appendChild(rightCanvas);
+      vizDiv.appendChild(stickRow);
+
+      var btnRow = document.createElement("div");
+      btnRow.id = "gpBtnRow";
+      btnRow.style.marginTop = "8px";
+      btnRow.textContent = "Buttons: --";
+      vizDiv.appendChild(btnRow);
+
+      var axesRow = document.createElement("div");
+      axesRow.id = "gpAxesRow";
+      axesRow.style.marginTop = "4px";
+      axesRow.textContent = "Axes: --";
+      vizDiv.appendChild(axesRow);
+
+      function drawStick(canvas, x, y) {
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, 100, 100);
+        // Background circle
+        ctx.strokeStyle = "#444";
+        ctx.beginPath();
+        ctx.arc(50, 50, 40, 0, Math.PI * 2);
+        ctx.stroke();
+        // Crosshair
+        ctx.strokeStyle = "#333";
+        ctx.beginPath();
+        ctx.moveTo(50, 10); ctx.lineTo(50, 90);
+        ctx.moveTo(10, 50); ctx.lineTo(90, 50);
+        ctx.stroke();
+        // Stick position
+        var sx = 50 + x * 40;
+        var sy = 50 + y * 40;
+        ctx.fillStyle = "#0f0";
+        ctx.beginPath();
+        ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawStick(leftCanvas, 0, 0);
+      drawStick(rightCanvas, 0, 0);
+
+      gamepadLiveInterval = setInterval(function() {
+        var gamepads = navigator.getGamepads();
+        var gp = null;
+        for (var i = 0; i < gamepads.length; i++) {
+          if (gamepads[i]) { gp = gamepads[i]; break; }
+        }
+        if (!gp) return;
+
+        // Update button display
+        var pressed = [];
+        for (var b = 0; b < gp.buttons.length; b++) {
+          if (gp.buttons[b].pressed) {
+            pressed.push("B" + b + (gp.buttons[b].value < 1 ? "(" + gp.buttons[b].value.toFixed(2) + ")" : ""));
+          }
+        }
+        var btnEl = document.getElementById("gpBtnRow");
+        if (btnEl) {
+          btnEl.textContent = "Buttons: " + (pressed.length > 0 ? pressed.join(" ") : "none");
+        }
+
+        // Update axes display
+        var axesText = "";
+        for (var a = 0; a < gp.axes.length; a++) {
+          axesText += "A" + a + ":" + gp.axes[a].toFixed(2) + " ";
+        }
+        var axesEl = document.getElementById("gpAxesRow");
+        if (axesEl) {
+          axesEl.textContent = "Axes: " + (axesText || "none");
+        }
+
+        // Draw analog sticks
+        var lx = gp.axes[0] || 0;
+        var ly = gp.axes[1] || 0;
+        var rx = gp.axes[2] || 0;
+        var ry = gp.axes[3] || 0;
+        drawStick(leftCanvas, lx, ly);
+        drawStick(rightCanvas, rx, ry);
+
+      }, 50);
+
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    // ============================
+    // ABOUT
+    // ============================
+    function cmdAbout() {
+      addLine("  ================================");
+      addLine("  VOIDDOCK v2.0.0");
+      addLine("  ================================");
+      addLine("  A command-line style web app");
+      addLine("  built for the Nintendo Switch");
+      addLine("  browser via SwitchBru DNS.");
+      addLine("  ================================");
+      addLine("  Environment probes & gamepad");
+      addLine("  diagnostics for Switch browser.");
+      addLine("  ================================");
+    }
+
+    // ============================
+    // GAMEPAD EVENT LISTENERS
+    // ============================
+    window.addEventListener("gamepadconnected", function(e) {
+      addLine("");
+      addLine("  [EVENT] Gamepad connected: " + e.gamepad.id);
+    });
+
+    window.addEventListener("gamepaddisconnected", function(e) {
+      addLine("");
+      addLine("  [EVENT] Gamepad disconnected: " + e.gamepad.id);
+    });
+  </script>
+
+</body>
+</html>
